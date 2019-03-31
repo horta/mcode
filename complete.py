@@ -1,19 +1,25 @@
-import unicodedata
-
+import os
 from string import ascii_lowercase
+
 import pandas as pd
 import pyperclip
 from fuzzyfinder import fuzzyfinder
 from prompt_toolkit import prompt
+
+# from fuzzywuzzy import fuzz, process
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.validation import ValidationError, Validator
 
 df = pd.read_pickle("unicode_clean1.pkl")
 
+
 def append(df, values):
     cols = ["name", "code", "char", "cat", "bidic", "sorted_name"]
     d = dict(zip(cols, values))
-    return df.append(d, ignore_index = True)
+    return df.append(d, ignore_index=True)
+
 
 def _append(df, name, s):
     df0 = df[df["name"] == name]
@@ -25,7 +31,19 @@ def _append(df, name, s):
     bidic = df0["bidic"].values[0]
     return append(df, [s, code, ch, cat, bidic, s])
 
-numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+
+numbers = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+]
 for i, num in enumerate(numbers):
     df0 = df[df["name"] == f"superscript {num}"]
     code = df0["code"].values[0]
@@ -42,8 +60,13 @@ for i, num in enumerate(numbers):
     bidic = df0["bidic"].values[0]
     df = append(df, [f"_{i}", code, ch, cat, bidic, f"_{i}"])
 
-names = ["superscript left parenthesis", "superscript right parenthesis",
-         "superscript minus", "superscript plus sign", "superscript equals sign"]
+names = [
+    "superscript left parenthesis",
+    "superscript right parenthesis",
+    "superscript minus",
+    "superscript plus sign",
+    "superscript equals sign",
+]
 shortcut = ["^(", "^)", "^-", "^+", "^="]
 
 for i, name in enumerate(names):
@@ -66,8 +89,13 @@ for a in ascii_lowercase:
     bidic = df0["bidic"].values[0]
     df = append(df, [f"^{a}", code, ch, cat, bidic, f"^{a}"])
 
-names = ["subscript left parenthesis", "subscript right parenthesis",
-         "subscript minus", "subscript plus sign", "subscript equals sign"]
+names = [
+    "subscript left parenthesis",
+    "subscript right parenthesis",
+    "subscript minus",
+    "subscript plus sign",
+    "subscript equals sign",
+]
 shortcut = ["_(", "_)", "_-", "_+", "_="]
 
 for i, name in enumerate(names):
@@ -78,7 +106,7 @@ for i, name in enumerate(names):
     bidic = df0["bidic"].values[0]
     s = shortcut[i]
     df = append(df, [s, code, ch, cat, bidic, s])
-    
+
 for a in ascii_lowercase:
     name = f"latin subscript small letter {a}"
     df0 = df[df["name"] == name]
@@ -90,17 +118,15 @@ for a in ascii_lowercase:
     bidic = df0["bidic"].values[0]
     df = append(df, [f"_{a}", code, ch, cat, bidic, f"_{a}"])
 
-greek = pd.read_csv("notebook/greek.csv", header=None)
+greek = pd.read_csv("greek.csv", header=None)
 for name in greek[0]:
-    print(name)
     df = _append(df, f"mathematical italic small {name}", "\\" + name)
     df = _append(df, f"mathematical bold small {name}", "\\boldsymbol \\" + name)
 
-# df = _append(df, "mathematical italic small alpha", r"\alpha")
-# df = _append(df, "mathematical bold small alpha", r"\boldsymbol \alpha")
-# df = _append(df, "mathematical italic small beta", r"\beta")
-# df = _append(df, "mathematical bold small beta", r"\boldsymbol \beta")
-# df = _append(df, "mathematical italic small delta", r"\delta")
+for a in ascii_lowercase:
+    A = a.upper()
+    df = _append(df, f"mathematical bold capital {a}", "\\mathbf " + A)
+    df = _append(df, f"mathematical bold small {a}", "\\mathbf " + a)
 
 df = _append(df, "modifier letter capital t", r"^T")
 df = _append(df, "circled times", r"\otimes")
@@ -109,6 +135,8 @@ df = _append(df, "dot operator", r"\cdot")
 df = _append(df, "tilde operator", r"\sim")
 df = _append(df, "mathematical bold script capital n", r"\mathcal N")
 df = _append(df, "mathematical bold digit zero", r"\boldsymbol 0")
+df = _append(df, "n-ary summation", r"\sum")
+df = _append(df, "n-ary product", r"\prod")
 
 _collection = list(zip(df.index.to_list(), df["sorted_name"].to_list()))
 _names = set(df["name"].to_list())
@@ -135,21 +163,42 @@ class MyCustomCompleter(Completer):
 
 class NameValidator(Validator):
     def validate(self, document):
-        if document.text.lower() not in _names:
+        t = document.text
+        if t not in _names and t != "exit" and t != "":
             raise ValidationError(message="Not an unicode name.", cursor_position=0)
 
 
+history_filepath = os.path.expanduser("~/.unicode_history")
+if not os.path.exists(history_filepath):
+    with open(history_filepath, "w"):
+        pass
+
+history = FileHistory(history_filepath)
 while True:
 
-    text = prompt(
-        "> ",
-        completer=MyCustomCompleter(),
-        complete_in_thread=True,
-        complete_while_typing=True,
-        validator=NameValidator(),
-    )
+    try:
+        text = prompt(
+            "unicode> ",
+            completer=MyCustomCompleter(),
+            complete_in_thread=True,
+            complete_while_typing=True,
+            validator=NameValidator(),
+            enable_history_search=False,
+            history=history,
+            auto_suggest=AutoSuggestFromHistory(),
+        )
+    except KeyboardInterrupt:
+        break
 
-    text = text.lower()
+    if text == "exit":
+        break
+
+    if text == "":
+        continue
+
+    if text != "":
+        history.append_string(text)
+
     symbol = df[df["name"] == text]["char"].values[0]
     pyperclip.copy(symbol)
-    print(symbol)
+    print("copied: " + symbol)
