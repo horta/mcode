@@ -5,14 +5,13 @@ import pandas as pd
 import pyperclip
 from fuzzyfinder import fuzzyfinder
 from prompt_toolkit import prompt
-
-# from fuzzywuzzy import fuzz, process
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.validation import ValidationError, Validator
 
-df = pd.read_pickle("unicode_clean1.pkl")
+folder = os.path.dirname(os.path.abspath(__file__))
+df = pd.read_pickle(os.path.join(folder, "unicode_clean1.pkl"))
 
 
 def append(df, values):
@@ -168,37 +167,39 @@ class NameValidator(Validator):
             raise ValidationError(message="Not an unicode name.", cursor_position=0)
 
 
-history_filepath = os.path.expanduser("~/.unicode_history")
-if not os.path.exists(history_filepath):
-    with open(history_filepath, "w"):
-        pass
+def cli():
 
-history = FileHistory(history_filepath)
-while True:
+    history_filepath = os.path.expanduser("~/.unicode_history")
+    if not os.path.exists(history_filepath):
+        with open(history_filepath, "w"):
+            pass
 
-    try:
-        text = prompt(
-            "unicode> ",
-            completer=MyCustomCompleter(),
-            complete_in_thread=True,
-            complete_while_typing=True,
-            validator=NameValidator(),
-            enable_history_search=False,
-            history=history,
-            auto_suggest=AutoSuggestFromHistory(),
-        )
-    except KeyboardInterrupt:
-        break
+    history = FileHistory(history_filepath)
+    while True:
 
-    if text == "exit":
-        break
+        try:
+            text = prompt(
+                "unicode> ",
+                completer=MyCustomCompleter(),
+                complete_in_thread=True,
+                complete_while_typing=True,
+                validator=NameValidator(),
+                enable_history_search=False,
+                history=history,
+                auto_suggest=AutoSuggestFromHistory(),
+            )
+        except KeyboardInterrupt:
+            break
 
-    if text == "":
-        continue
+        if text == "exit":
+            break
 
-    if text != "":
-        history.append_string(text)
+        if text == "":
+            continue
 
-    symbol = df[df["name"] == text]["char"].values[0]
-    pyperclip.copy(symbol)
-    print("copied: " + symbol)
+        if text != "":
+            history.append_string(text)
+
+        symbol = df[df["name"] == text]["char"].values[0]
+        pyperclip.copy(symbol)
+        print("copied: " + symbol)
