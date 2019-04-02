@@ -117,7 +117,7 @@ for a in ascii_lowercase:
     bidic = df0["bidic"].values[0]
     df = append(df, [f"_{a}", code, ch, cat, bidic, f"_{a}"])
 
-greek = pd.read_csv("greek.csv", header=None)
+greek = pd.read_csv(os.path.join(folder, "greek.csv"), header=None)
 for name in greek[0]:
     df = _append(df, f"mathematical italic small {name}", "\\" + name)
     df = _append(df, f"mathematical bold small {name}", "\\boldsymbol \\" + name)
@@ -136,6 +136,7 @@ df = _append(df, "mathematical bold script capital n", r"\mathcal N")
 df = _append(df, "mathematical bold digit zero", r"\boldsymbol 0")
 df = _append(df, "n-ary summation", r"\sum")
 df = _append(df, "n-ary product", r"\prod")
+df = _append(df, "n-ary circled dot operator", r"\odot")
 
 _collection = list(zip(df.index.to_list(), df["sorted_name"].to_list()))
 _names = set(df["name"].to_list())
