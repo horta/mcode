@@ -50,6 +50,7 @@ for i, num in enumerate(numbers):
     cat = df0["cat"].values[0]
     bidic = df0["bidic"].values[0]
     df = append(df, [f"^{i}", code, ch, cat, bidic, f"^{i}"])
+    df = _append(df, f"mathematical bold digit {num}", f"\\boldsymbol {i}")
 
 for i, num in enumerate(numbers):
     df0 = df[df["name"] == f"subscript {num}"]
@@ -133,10 +134,10 @@ df = _append(df, "multiplication sign", r"\times")
 df = _append(df, "dot operator", r"\cdot")
 df = _append(df, "tilde operator", r"\sim")
 df = _append(df, "mathematical bold script capital n", r"\mathcal N")
-df = _append(df, "mathematical bold digit zero", r"\boldsymbol 0")
 df = _append(df, "n-ary summation", r"\sum")
 df = _append(df, "n-ary product", r"\prod")
-df = _append(df, "n-ary circled dot operator", r"\odot")
+df = _append(df, "circled dot operator", r"\odot")
+
 
 _collection = list(zip(df.index.to_list(), df["sorted_name"].to_list()))
 _names = set(df["name"].to_list())

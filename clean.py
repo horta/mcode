@@ -26,8 +26,17 @@ alphabets = pd.read_csv("alphabets.csv", header=None)
 alphabets = [alphabets.iloc[i].values[0].lower() for i in range(alphabets.shape[0])]
 alphabets = [a for a in alphabets if a not in ["latin", "greek"]]
 
+
+# ishape = df[df["name"].str.contains("modifier")].shape[0]
 for alphabet in alphabets:
+    if alphabet == "modi":
+        alphabet += " "
     df = df[logical_not(df["name"].str.startswith(alphabet))]
+    # if df[df["name"].str.contains("modifier")].shape[0] < ishape:
+    #     print(alphabet)
+    #     breakpoint()
+    #     ishape = df[df["name"].str.contains("modifier")].shape[0]
+    #     pass
 
 df = df[logical_not(df["name"].str.startswith("variation"))]
 df = df[logical_not(df["name"].str.startswith("tag"))]
